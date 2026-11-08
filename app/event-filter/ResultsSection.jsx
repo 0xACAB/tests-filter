@@ -5,105 +5,174 @@ const getOutcomeColor = (winningVariant) =>
     winningVariant === 'home' ? 'text-indigo-700' : winningVariant === 'away' ? 'text-teal-700' : 'text-slate-600';
 
 function PeriodChart({ scheme, cardProfile }) {
-    const getTotal = (scores) => {
-        if (!Array.isArray(scores)) return null;
-        const total = scores.at(-1);
-        if (total == null || (typeof total !== 'number' && typeof total !== 'string')) return null;
-        if (typeof total === 'string' && !total.trim()) return null;
-        const value = Number(total);
-        return Number.isFinite(value) && value >= 0 ? value : null;
-    };
-    const homeTotal = getTotal(scheme.home);
-    const awayTotal = getTotal(scheme.away);
-    const hasWinner = homeTotal !== null && awayTotal !== null && homeTotal !== awayTotal;
-    const homeLeads = hasWinner && homeTotal > awayTotal;
-    const variants = [
-        {
-            label: cardProfile.homeLabel,
-            color: hasWinner ? (homeLeads ? '#15803d' : '#be123c') : '#4338ca',
-            result: hasWinner ? (homeLeads ? 'больше баллов' : 'меньше баллов') : null,
-            scores: scheme.home
-        },
-        {
-            label: cardProfile.awayLabel,
-            color: hasWinner ? (homeLeads ? '#be123c' : '#15803d') : '#0f766e',
-            result: hasWinner ? (homeLeads ? 'меньше баллов' : 'больше баллов') : null,
-            scores: scheme.away
+    const homeScores = Array.isArray(scheme.home) ? scheme.home.slice(0, -1) : [];
+    const awayScores = Array.isArray(scheme.away) ? scheme.away.slice(0, -1) : [];
+    const periodCount = Math.min(homeScores.length, awayScores.length);
+    const points = [];
+    let cumulativeDelta = 0;
+
+    for (let index = 0; index < periodCount; index++) {
+        const homeScore = Number(homeScores[index]);
+        const awayScore = Number(awayScores[index]);
+        if (
+            homeScores[index] == null ||
+            awayScores[index] == null ||
+            (typeof homeScores[index] === 'string' && !homeScores[index].trim()) ||
+            (typeof awayScores[index] === 'string' && !awayScores[index].trim()) ||
+            !Number.isFinite(homeScore) ||
+            !Number.isFinite(awayScore)
+        ) {
+            break;
         }
-    ].map((variant) => ({
-        ...variant,
-        points: Array.isArray(variant.scores)
-            ? variant.scores.slice(0, -1).flatMap((score, index) => {
-                  if (score == null || (typeof score === 'string' && !score.trim())) return [];
-                  const value = Number(score);
-                  return Number.isFinite(value) && value >= 0 ? [{ period: index + 1, value }] : [];
-              })
-            : []
-    }));
 
-    if (variants.some((variant) => variant.points.length < 2)) return null;
+        const periodDelta = homeScore - awayScore;
+        cumulativeDelta += periodDelta;
+        points.push({ period: index + 1, delta: cumulativeDelta, periodDelta });
+    }
 
-    const maxPeriod = Math.max(...variants.flatMap((variant) => variant.points.map((point) => point.period)));
-    const maxValue = Math.max(1, ...variants.flatMap((variant) => variant.points.map((point) => point.value)));
-    const x = (period) => 16 + ((period - 1) / (maxPeriod - 1)) * 268;
-    const y = (value) => 65 - (value / maxValue) * 55;
-    const description = variants
+    if (points.length < 2) return null;
+
+    const maxPeriod = points[points.length - 1].period;
+    const maxDelta = Math.max(1, ...points.map((point) => Math.abs(point.delta)));
+    const x = (period) => 40 + ((period - 1) / (maxPeriod - 1)) * 244;
+    const zeroY = 49;
+    const y = (delta) => zeroY - (delta / maxDelta) * 29;
+    const colorForDelta = (delta) => (delta > 0 ? '#15803d' : delta < 0 ? '#be123c' : '#64748b');
+    const formatDelta = (delta) => (delta > 0 ? `+${delta}` : `${delta}`);
+    const formatPoints = (value) => {
+        const absoluteValue = Math.abs(value);
+        const lastTwoDigits = absoluteValue % 100;
+        const lastDigit = absoluteValue % 10;
+        const unit =
+            lastTwoDigits >= 11 && lastTwoDigits <= 14
+                ? 'баллов'
+                : lastDigit === 1
+                  ? 'балл'
+                  : lastDigit >= 2 && lastDigit <= 4
+                    ? 'балла'
+                    : 'баллов';
+        return `${absoluteValue} ${unit}`;
+    };
+    const leadDescription = (delta) =>
+        delta > 0
+            ? `${cardProfile.homeLabel} впереди на ${formatPoints(delta)}`
+            : delta < 0
+              ? `${cardProfile.awayLabel} впереди на ${formatPoints(delta)}`
+              : 'равный счёт';
+    const description = points
         .map(
-            (variant) =>
-                `${variant.label}${variant.result ? ` (${variant.result})` : ''}: ${variant.points.map((point) => `${point.period} период — ${point.value}`).join(', ')}`
+            (point) =>
+                `${point.period} период: ${leadDescription(point.delta)}, разница за период ${formatDelta(point.periodDelta)}`
         )
         .join('; ');
+    const areaSegments = points.slice(1).flatMap((point, index) => {
+        const previous = points[index];
+        const previousX = x(previous.period);
+        const currentX = x(point.period);
+        const previousY = y(previous.delta);
+        const currentY = y(point.delta);
 
+        if (previous.delta === 0 || point.delta === 0 || Math.sign(previous.delta) === Math.sign(point.delta)) {
+            return [
+                {
+                    key: point.period,
+                    color: colorForDelta(previous.delta || point.delta),
+                    polygon: `${previousX},${zeroY} ${previousX},${previousY} ${currentX},${currentY} ${currentX},${zeroY}`
+                }
+            ];
+        }
+
+        const crossingX =
+            previousX + ((-previous.delta) / (point.delta - previous.delta)) * (currentX - previousX);
+        return [
+            {
+                key: `${point.period}-start`,
+                color: colorForDelta(previous.delta),
+                polygon: `${previousX},${zeroY} ${previousX},${previousY} ${crossingX},${zeroY}`
+            },
+            {
+                key: `${point.period}-end`,
+                color: colorForDelta(point.delta),
+                polygon: `${crossingX},${zeroY} ${currentX},${currentY} ${currentX},${zeroY}`
+            }
+        ];
+    });
     return (
         <div className="mt-3 border-t border-slate-200 pt-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <span className="font-medium text-slate-600">Динамика по периодам</span>
-                <span className="flex flex-wrap gap-2">
-                    {variants.map((variant) => (
-                        <span key={variant.label} style={{ color: variant.color }}>
-                            ● {variant.label}{variant.result ? ` (${variant.result})` : ''}
-                        </span>
-                    ))}
-                </span>
+            <div className="mt-1 flex gap-3 text-xs">
+                <span className="text-emerald-700">● {cardProfile.homeLabel} впереди</span>
+                <span className="text-rose-700">● {cardProfile.awayLabel} впереди</span>
             </div>
             <svg
-                viewBox="0 0 300 88"
+                viewBox="0 0 300 112"
                 className="mt-1 h-auto w-full"
                 role="img"
-                aria-label={`Значения по периодам. ${description}`}
+                aria-label={`Накопительная разница счёта по периодам. ${description}`}
             >
-                <line x1="16" y1="65" x2="284" y2="65" stroke="#cbd5e1" />
-                {variants.map((variant) => (
-                    <g key={variant.label} fill={variant.color} stroke={variant.color}>
-                        {variant.points.slice(1).map((point, index) => {
-                            const previous = variant.points[index];
-                            if (point.period !== previous.period + 1) return null;
-                            return (
-                                <line
-                                    key={point.period}
-                                    x1={x(previous.period)}
-                                    y1={y(previous.value)}
-                                    x2={x(point.period)}
-                                    y2={y(point.value)}
-                                    strokeWidth="2"
-                                />
-                            );
-                        })}
-                        {variant.points.map((point) => (
-                            <circle key={point.period} cx={x(point.period)} cy={y(point.value)} r="3" />
-                        ))}
+                <rect x="40" y="20" width="244" height={zeroY - 20} fill="#15803d" opacity="0.05" />
+                <rect x="40" y={zeroY} width="244" height="29" fill="#be123c" opacity="0.05" />
+                <line x1="40" y1={zeroY} x2="284" y2={zeroY} stroke="#94a3b8" strokeDasharray="3 3" />
+                <text x="35" y="22" textAnchor="end" fill="#64748b" fontSize="9">
+                    +{maxDelta}
+                </text>
+                <text x="35" y={zeroY + 3} textAnchor="end" fill="#64748b" fontSize="9">
+                    0
+                </text>
+                <text x="35" y="82" textAnchor="end" fill="#64748b" fontSize="9">
+                    −{maxDelta}
+                </text>
+                {areaSegments.map((segment) => (
+                    <polygon
+                        key={segment.key}
+                        points={segment.polygon}
+                        fill={segment.color}
+                        opacity="0.2"
+                    />
+                ))}
+                {points.slice(1).map((point, index) => {
+                    const previous = points[index];
+                    return (
+                        <line
+                            key={point.period}
+                            x1={x(previous.period)}
+                            y1={y(previous.delta)}
+                            x2={x(point.period)}
+                            y2={y(point.delta)}
+                            stroke={colorForDelta(point.delta || previous.delta)}
+                            strokeWidth="2.5"
+                        />
+                    );
+                })}
+                {points.map((point) => (
+                    <g key={point.period}>
+                        <circle
+                            cx={x(point.period)}
+                            cy={y(point.delta)}
+                            r="3.5"
+                            fill={colorForDelta(point.delta)}
+                        />
+                        <text
+                            x={x(point.period)}
+                            y={point.delta >= 0 ? y(point.delta) - 7 : y(point.delta) + 13}
+                            textAnchor="middle"
+                            fill={colorForDelta(point.delta)}
+                            fontSize="9"
+                            fontWeight="600"
+                        >
+                            {formatDelta(point.delta)}
+                        </text>
                     </g>
                 ))}
-                {Array.from({ length: maxPeriod }, (_, index) => (
+                {points.map((point) => (
                     <text
-                        key={index}
-                        x={x(index + 1)}
-                        y="82"
+                        key={`period-${point.period}`}
+                        x={x(point.period)}
+                        y="103"
                         textAnchor="middle"
                         fill="#64748b"
                         fontSize="10"
                     >
-                        {index + 1}
+                        {point.period}
                     </text>
                 ))}
             </svg>
