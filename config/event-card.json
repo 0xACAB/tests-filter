@@ -1,7 +1,7 @@
 {
     "id": "events",
     "name": "События",
-    "pageTitle": "Фильтр событий",
+    "pageTitle": "Фильтр тестов",
     "eventPrefix": "Запись: ",
     "winnerHome": "Результат: Тест А",
     "winnerAway": "Результат: Тест B",

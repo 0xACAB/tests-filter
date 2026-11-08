@@ -9,7 +9,7 @@ import FilterPanel from './FilterPanel';
 import { fetchExperimentStats } from './actions/stats';
 import eventCardConfig from '../../config/event-card.json';
 
-const subscribeToClient = () => () => {};
+const subscribeToClient = () => () => { };
 const getClientStatus = () => true;
 const getServerClientStatus = () => false;
 
@@ -97,7 +97,7 @@ export default function FilterClient() {
             <div className="scrollbar-aware-container">
                 <div className="p-4 max-w-6xl mx-auto">
                     <h1 className="text-2xl font-bold mb-6 text-center">
-                        {eventCardConfig?.pageTitle || 'Фильтр событий'}
+                        {eventCardConfig?.pageTitle}
                     </h1>
                     <div>Загрузка...</div>
                 </div>
@@ -109,7 +109,7 @@ export default function FilterClient() {
         <div className="scrollbar-aware-container">
             <div className="p-4 max-w-6xl mx-auto">
                 <h1 className="text-2xl font-bold mb-6 text-center">
-                    {eventCardConfig?.pageTitle || 'Фильтр событий'}
+                    {eventCardConfig?.pageTitle}
                 </h1>
 
                 <FilterPanel

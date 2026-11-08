@@ -3,16 +3,6 @@ import { create } from 'zustand/index';
 import { devtools } from 'zustand/middleware';
 import { fetchFilteredEvents } from './actions/stats';
 
-const sampleParityReducer = (state, parity) => {
-    switch (parity) {
-        case 'even':
-            return { sampling: state.sampling.filter((sample) => sample % 2 === 0) };
-        case 'odd':
-            return { sampling: state.sampling.filter((sample) => sample % 2 === 1) };
-        default:
-            return state;
-    }
-};
 
 const eventFilterReducer = (state, action) => {
     switch (action.type) {
@@ -90,7 +80,6 @@ const useExperimentStore = create()(
             }
         },
 
-        filterSamplesByParity: () => set((state) => sampleParityReducer(state, 'odd')),
         filterEventsByCoefficient: async (coefficient) =>
             set((state) => eventFilterReducer(state, { type: 'coefficient', payload: coefficient })),
         filterEventsByVariant: async (variant) =>
