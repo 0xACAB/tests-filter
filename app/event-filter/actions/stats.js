@@ -39,13 +39,13 @@ export async function fetchExperimentStats() {
         createdAt: event.createdAt ? event.createdAt.toISOString() : null
     }));
 
-    const coefficientStats = events.reduce((stats, event) => {
-        event.realCoefficients.forEach((coefficient, index) => {
-            const numericCoefficient = Number(coefficient);
+    const versionStats = events.reduce((stats, event) => {
+        event.realCoefficients.forEach((version, index) => {
+            const numericVersion = Number(version);
 
-            const key = numericCoefficient.toFixed(2);
+            const key = numericVersion.toFixed(2);
             if (!stats[key]) {
-                stats[key] = { coefficient: numericCoefficient, sampleSize: 0, successCount: 0 };
+                stats[key] = { version: numericVersion, sampleSize: 0, successCount: 0 };
             }
             stats[key].sampleSize++;
 
@@ -56,16 +56,16 @@ export async function fetchExperimentStats() {
         return stats;
     }, {});
 
-    const variantCoefficientStats = events.reduce((stats, event) => {
-        event.realCoefficients.forEach((coefficient, index) => {
-            const numericCoefficient = Number(coefficient);
+    const variantVersionStats = events.reduce((stats, event) => {
+        event.realCoefficients.forEach((version, index) => {
+            const numericVersion = Number(version);
 
             const variant = index === 0 ? 'home' : 'away';
-            const variantKey = `${numericCoefficient.toFixed(2)}_${variant}`;
+            const variantKey = `${numericVersion.toFixed(2)}_${variant}`;
 
             if (!stats[variantKey]) {
                 stats[variantKey] = {
-                    coefficient: numericCoefficient,
+                    version: numericVersion,
                     variant,
                     sampleSize: 0,
                     successCount: 0
@@ -79,20 +79,20 @@ export async function fetchExperimentStats() {
         });
         return stats;
     }, {});
-    return [Object.values(coefficientStats), variantCoefficientStats, events.length];
+    return [Object.values(versionStats), variantVersionStats, events.length];
 }
 
 export async function fetchFilteredEvents(props) {
-    const { coefficient, team: variant } = (await props.searchParams) || {};
-    let coefficientFieldPath;
+    const { version, team: variant } = (await props.searchParams) || {};
+    let versionFieldPath;
     if (variant) {
-        coefficientFieldPath = `realCoefficients.${variant === 'home' ? 0 : 1}`;
+        versionFieldPath = `realCoefficients.${variant === 'home' ? 0 : 1}`;
     } else {
-        coefficientFieldPath = 'realCoefficients';
+        versionFieldPath = 'realCoefficients';
     }
     const { db } = await connectToDatabase();
     //В realCoefficients всегда строки длины 4 или 5 "x.xx" или "xx.xx"
-    const matchingCoefficients = coefficient ? [coefficient] : [];
+    const matchingVersions = version ? [version] : [];
     const events = await db
         .collection('nba')
         .aggregate([
@@ -103,10 +103,10 @@ export async function fetchFilteredEvents(props) {
                         $exists: true,
                         $ne: null
                     },
-                    [coefficientFieldPath]: {
+                    [versionFieldPath]: {
                         $exists: true,
                         $ne: null,
-                        $in: matchingCoefficients
+                        $in: matchingVersions
                     }
                 }
             },

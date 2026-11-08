@@ -2,21 +2,21 @@
 import { create } from 'zustand/index';
 import { devtools } from 'zustand/middleware';
 import { fetchFilteredEvents } from './actions/stats';
-import { MIN_SAMPLE_SIZE_FOR_TOP_COEFFICIENTS, TOP_COEFFICIENTS_LIMIT, MIN_COEFFICIENT_THRESHOLD } from './globals';
+import { MIN_SAMPLE_SIZE_FOR_TOP_VERSIONS, TOP_VERSIONS_LIMIT, MIN_VERSION_THRESHOLD } from './globals';
 
 
 const eventFilterReducer = (state, action) => {
     switch (action.type) {
-        case 'coefficient':
-            const coefficientFilter = action.payload;
+        case 'version':
+            const versionFilter = action.payload;
             return {
                 ...state,
                 filteredEvents: state.allEvents.filter((event) => {
-                    const hasMatchingCoefficient = event.realCoefficients?.some((value) => {
-                        const numericCoefficient = Number(value);
-                        return !isNaN(numericCoefficient) && numericCoefficient.toFixed(2) === coefficientFilter;
+                    const hasMatchingVersion = event.realCoefficients?.some((value) => {
+                        const numericVersion = Number(value);
+                        return !isNaN(numericVersion) && numericVersion.toFixed(2) === versionFilter;
                     });
-                    if (!hasMatchingCoefficient) return false;
+                    if (!hasMatchingVersion) return false;
                 })
             };
         case 'variant':
@@ -24,12 +24,12 @@ const eventFilterReducer = (state, action) => {
             return {
                 filteredEvents: state.allEvents.filter((event) => {
                     if (selectedVariant === 'home') {
-                        const variantACoefficient = Number(event.realCoefficients?.[0]);
-                        return !isNaN(variantACoefficient);
+                        const variantAVersion = Number(event.realCoefficients?.[0]);
+                        return !isNaN(variantAVersion);
                     }
                     if (selectedVariant === 'away') {
-                        const variantBCoefficient = Number(event.realCoefficients?.[1]);
-                        return !isNaN(variantBCoefficient);
+                        const variantBVersion = Number(event.realCoefficients?.[1]);
+                        return !isNaN(variantBVersion);
                     }
                 })
             };
@@ -41,45 +41,45 @@ const eventFilterReducer = (state, action) => {
 const useExperimentStore = create()(
     devtools((set, get) => ({
         // Состояния
-        selectedCoefficient: null,
+        selectedVersion: null,
         selectedVariant: null,
         totalEvents: 0,
         events: [],
         loading: false,
-        coefficientStats: [],
-        variantCoefficientStats: {},
+        versionStats: [],
+        variantVersionStats: {},
         statsInitialized: false,
-        minSampleSize: MIN_SAMPLE_SIZE_FOR_TOP_COEFFICIENTS,
-        topCoefficientsLimit: TOP_COEFFICIENTS_LIMIT,
-        minCoefficientThreshold: MIN_COEFFICIENT_THRESHOLD,
+        minSampleSize: MIN_SAMPLE_SIZE_FOR_TOP_VERSIONS,
+        topVersionsLimit: TOP_VERSIONS_LIMIT,
+        minVersionThreshold: MIN_VERSION_THRESHOLD,
 
         // Инициализация статической статистики (вызывается один раз)
-        initializeExperimentStats: (coefficientStats, variantCoefficientStats, totalEvents) => {
+        initializeExperimentStats: (versionStats, variantVersionStats, totalEvents) => {
             set({
-                coefficientStats,
-                variantCoefficientStats,
+                versionStats,
+                variantVersionStats,
                 totalEvents,
                 statsInitialized: true
             });
         },
 
-        setSelectedCoefficient: (selectedCoefficient) => {
-            set({ selectedCoefficient });
+        setSelectedVersion: (selectedVersion) => {
+            set({ selectedVersion });
         },
 
         setSelectedVariant: (selectedVariant) => set({ selectedVariant }),
 
         setMinSampleSize: (value) => set({ minSampleSize: value }),
-        setTopCoefficientsLimit: (value) => set({ topCoefficientsLimit: value }),
-        setMinCoefficientThreshold: (value) => set({ minCoefficientThreshold: value }),
+        setTopVersionsLimit: (value) => set({ topVersionsLimit: value }),
+        setMinVersionThreshold: (value) => set({ minVersionThreshold: value }),
 
         // Асинхронная загрузка событий эксперимента с сервера
         loadEvents: async () => {
-            const { selectedCoefficient, selectedVariant } = get();
+            const { selectedVersion, selectedVariant } = get();
             set({ loading: true });
             try {
                 // Подготовка параметров для серверного экшена
-                const params = { searchParams: { coefficient: selectedCoefficient, team: selectedVariant } };
+                const params = { searchParams: { version: selectedVersion, team: selectedVariant } };
                 const fetchedEvents = await fetchFilteredEvents(params);
                 set({ events: fetchedEvents, loading: false });
             } catch (error) {
@@ -88,8 +88,8 @@ const useExperimentStore = create()(
             }
         },
 
-        filterEventsByCoefficient: async (coefficient) =>
-            set((state) => eventFilterReducer(state, { type: 'coefficient', payload: coefficient })),
+        filterEventsByVersion: async (version) =>
+            set((state) => eventFilterReducer(state, { type: 'version', payload: version })),
         filterEventsByVariant: async (variant) =>
             set((state) => eventFilterReducer(state, { type: 'variant', payload: variant }))
     }))

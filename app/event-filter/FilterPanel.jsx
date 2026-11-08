@@ -5,46 +5,46 @@ import { useExperimentStore } from './states';
 
 export default function FilterPanel({
     events,
-    onCoefficientSelect,
+    onVersionSelect,
     onVariantSelect,
-    coefficientFilterLabel = 'Фильтр по значению:',
+    versionFilterLabel = 'Фильтр по версии:',
     variantFilterLabel = 'Для теста:',
     allVariantsLabel = 'Любой тест',
     variantALabel = 'Тест A',
     variantBLabel = 'Тест B'
 }) {
     const {
-        coefficientStats,
+        versionStats,
         totalEvents,
-        selectedCoefficient,
+        selectedVersion,
         selectedVariant,
         minSampleSize,
-        topCoefficientsLimit,
-        minCoefficientThreshold,
+        topVersionsLimit,
+        minVersionThreshold,
         setMinSampleSize,
-        setTopCoefficientsLimit,
-        setMinCoefficientThreshold
+        setTopVersionsLimit,
+        setMinVersionThreshold
     } = useExperimentStore();
-    // Уникальные значения для выпадающего списка
-    const uniqueCoefficients = useMemo(() => {
-        const coefficients = coefficientStats.map((stat) => stat.coefficient);
-        const validCoefficients = coefficients.reduce((acc, value) => {
-            if (!isNaN(value) && (value >= minCoefficientThreshold || Number(value).toFixed(2) === selectedCoefficient)) {
+    // Уникальные версии для выпадающего списка
+    const uniqueVersions = useMemo(() => {
+        const versions = versionStats.map((stat) => stat.version);
+        const validVersions = versions.reduce((acc, value) => {
+            if (!isNaN(value) && (value >= minVersionThreshold || Number(value).toFixed(2) === selectedVersion)) {
                 acc.push(parseFloat(Number(value).toFixed(2)));
             }
             return acc;
         }, []);
-        return [...new Set(validCoefficients)].sort((a, b) => a - b);
-    }, [coefficientStats, minCoefficientThreshold, selectedCoefficient]);
+        return [...new Set(validVersions)].sort((a, b) => a - b);
+    }, [versionStats, minVersionThreshold, selectedVersion]);
 
-    // Map для быстрого доступа к сводным данным по значению
-    const coefficientStatsByValue = useMemo(
-        () => new Map(coefficientStats.map((stat) => [stat.coefficient.toFixed(2), stat])),
-        [coefficientStats]
+    // Map для быстрого доступа к сводным данным по версии
+    const versionStatsByValue = useMemo(
+        () => new Map(versionStats.map((stat) => [stat.version.toFixed(2), stat])),
+        [versionStats]
     );
 
     // Есть ли активный фильтр (для подсветки)
-    const hasActiveFilter = !!(selectedCoefficient || selectedVariant);
+    const hasActiveFilter = !!(selectedVersion || selectedVariant);
 
     return (
         <div className="p-0">
@@ -61,27 +61,27 @@ export default function FilterPanel({
                 <div className="text-sm font-medium text-gray-700 mb-3">Параметры фильтрации</div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <ParameterInput id="min-sample-size" label="Мин. размер выборки" value={minSampleSize} onChange={setMinSampleSize} />
-                    <ParameterInput id="top-coefficients-limit" label="Лимит коэффициентов" value={topCoefficientsLimit} onChange={setTopCoefficientsLimit} />
-                    <ParameterInput id="min-coefficient-threshold" label="Мин. порог коэффициента" value={minCoefficientThreshold} onChange={setMinCoefficientThreshold} decimal />
+                    <ParameterInput id="top-versions-limit" label="Лимит версий" value={topVersionsLimit} onChange={setTopVersionsLimit} />
+                    <ParameterInput id="min-version-threshold" label="Мин. порог версии" value={minVersionThreshold} onChange={setMinVersionThreshold} decimal />
                 </div>
             </div>
 
             <div className="mt-4">
                 <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-4">
-                    {/* Фильтр по значению */}
+                    {/* Фильтр по версии */}
                     <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">{coefficientFilterLabel}</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{versionFilterLabel}</label>
                         <select
-                            value={selectedCoefficient || ''}
-                            onChange={(e) => onCoefficientSelect(e.target.value || null)}
+                            value={selectedVersion || ''}
+                            onChange={(e) => onVersionSelect(e.target.value || null)}
                             className="w-full p-2 border rounded-lg"
                         >
-                            <option value="">Пустой набор значений</option>
-                            {uniqueCoefficients.map((coefficientValue) => {
-                                const stat = coefficientStatsByValue.get(coefficientValue.toFixed(2));
+                            <option value="">Пустой набор версий</option>
+                            {uniqueVersions.map((versionValue) => {
+                                const stat = versionStatsByValue.get(versionValue.toFixed(2));
                                 return (
-                                    <option key={coefficientValue} value={coefficientValue.toFixed(2)}>
-                                        {coefficientValue.toFixed(2)}
+                                    <option key={versionValue} value={versionValue.toFixed(2)}>
+                                        {versionValue.toFixed(2)}
                                         {stat && ` (${stat.successCount}/${stat.sampleSize})`}
                                     </option>
                                 );

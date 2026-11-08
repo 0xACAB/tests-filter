@@ -3,19 +3,19 @@
 import { useMemo } from 'react';
 import { useExperimentStore } from './states';
 
-function CoefficientButton({ stat, isSelected, onClick }) {
+function VersionButton({ stat, isSelected, onClick }) {
     return (
         <button
             onClick={onClick}
             className={`px-3 py-1 rounded-full text-sm transition-all relative ${
                 isSelected ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 hover:bg-gray-200'
             }`}
-            title={`${stat.coefficient.toFixed(2)} (${
+            title={`${stat.version.toFixed(2)} (${
                 stat.variant === 'home' ? 'Тест A' : stat.variant === 'away' ? 'Тест B' : 'Все варианты'
             }): ${stat.successCount}/${stat.sampleSize} результатов (${(stat.successRate * 100).toFixed(1)}%)`}
         >
             <div className="flex items-center gap-1">
-                <span>{stat.coefficient.toFixed(2)}</span>
+                <span>{stat.version.toFixed(2)}</span>
                 <span className={`text-xs ${isSelected ? 'text-blue-100' : 'text-gray-500'}`}>
                     ({stat.successCount}/{stat.sampleSize})
                 </span>
@@ -23,58 +23,58 @@ function CoefficientButton({ stat, isSelected, onClick }) {
         </button>
     );
 }
-export default function TopCoefficients({ onCoefficientSelect }) {
+export default function TopVersions({ onVersionSelect }) {
     const {
         statsInitialized,
-        coefficientStats,
-        variantCoefficientStats,
-        selectedCoefficient,
+        versionStats,
+        variantVersionStats,
+        selectedVersion,
         selectedVariant,
         minSampleSize,
-        topCoefficientsLimit,
-        minCoefficientThreshold
+        topVersionsLimit,
+        minVersionThreshold
     } = useExperimentStore();
 
-    const topCoefficients = useMemo(() => {
+    const topVersions = useMemo(() => {
         if (!statsInitialized) return [];
         if (!selectedVariant) {
-            return coefficientStats
+            return versionStats
                 .filter(
                     (stat) =>
                         stat.sampleSize >= minSampleSize &&
-                        stat.coefficient >= minCoefficientThreshold
+                        stat.version >= minVersionThreshold
                 )
                 .map((stat) => ({ ...stat, successRate: stat.successCount / stat.sampleSize }))
-                .sort((a, b) => b.successRate - a.successRate || b.coefficient - a.coefficient)
-                .slice(0, topCoefficientsLimit);
+                .sort((a, b) => b.successRate - a.successRate || b.version - a.version)
+                .slice(0, topVersionsLimit);
         }
-        const variantStats = Object.values(variantCoefficientStats);
+        const variantStats = Object.values(variantVersionStats);
         return variantStats
             .filter(
                 (stat) =>
                     stat.variant === selectedVariant &&
                     stat.sampleSize >= minSampleSize &&
-                    stat.coefficient >= minCoefficientThreshold
+                    stat.version >= minVersionThreshold
             )
             .map((stat) => ({ ...stat, successRate: stat.successCount / stat.sampleSize }))
-            .sort((a, b) => b.successRate - a.successRate || b.coefficient - a.coefficient)
-            .slice(0, topCoefficientsLimit);
-    }, [statsInitialized, coefficientStats, variantCoefficientStats, selectedVariant, minSampleSize, topCoefficientsLimit, minCoefficientThreshold]);
+            .sort((a, b) => b.successRate - a.successRate || b.version - a.version)
+            .slice(0, topVersionsLimit);
+    }, [statsInitialized, versionStats, variantVersionStats, selectedVariant, minSampleSize, topVersionsLimit, minVersionThreshold]);
 
     return (
         <div className="p-4">
             {/* ... */}
             <div className="flex flex-wrap gap-2">
-                {topCoefficients.map((stat) => (
-                    <CoefficientButton
-                        key={`${stat.coefficient}_${stat.variant || 'all'}`}
+                {topVersions.map((stat) => (
+                    <VersionButton
+                        key={`${stat.version}_${stat.variant || 'all'}`}
                         stat={stat}
                         isSelected={
-                            selectedCoefficient &&
-                            stat.coefficient.toFixed(2) === selectedCoefficient &&
+                            selectedVersion &&
+                            stat.version.toFixed(2) === selectedVersion &&
                             (!selectedVariant || stat.variant === selectedVariant)
                         }
-                        onClick={() => onCoefficientSelect(stat.coefficient.toString())}
+                        onClick={() => onVersionSelect(stat.version.toString())}
                     />
                 ))}
             </div>

@@ -112,7 +112,7 @@ function PeriodChart({ scheme, cardProfile }) {
 }
 
 export default function ResultsSection({ events, loading, cardProfile }) {
-    const { selectedCoefficient, setSelectedCoefficient } = useExperimentStore();
+    const { selectedVersion, setSelectedVersion } = useExperimentStore();
 
     if (loading) {
         return <div className="text-center py-12">Загрузка...</div>;
@@ -122,22 +122,22 @@ export default function ResultsSection({ events, loading, cardProfile }) {
         return (
             <div className="text-center py-12 bg-gray-50 rounded-lg">
                 <div className="text-gray-500 text-lg mb-2">
-                    {selectedCoefficient
-                        ? `Нет записей со значением ${selectedCoefficient}`
+                    {selectedVersion
+                        ? `Нет записей с версией ${selectedVersion}`
                         : 'Нет данных для отображения'}
                 </div>
-                {selectedCoefficient && (
+                {selectedVersion && (
                     <button
                         onClick={() => {
-                            // Сбросить выбранное значение в сторе и URL
+                            // Сбросить выбранную версию в сторе и URL
                             const url = new URL(window.location.href);
                             url.searchParams.delete('coefficient');
                             window.history.pushState({}, '', url.toString());
-                            setSelectedCoefficient(null);
+                            setSelectedVersion(null);
                         }}
                         className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                     >
-                        Показать пустой набор значений
+                        Показать пустой набор версий
                     </button>
                 )}
             </div>
@@ -147,8 +147,8 @@ export default function ResultsSection({ events, loading, cardProfile }) {
         <div className="mb-6 p-4">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">
-                    {selectedCoefficient
-                        ? `Записи со значением ${selectedCoefficient} (${events.length})`
+                    {selectedVersion
+                        ? `Записи с версией ${selectedVersion} (${events.length})`
                         : `Все записи (${events.length})`}
                 </h2>
             </div>
@@ -158,7 +158,7 @@ export default function ResultsSection({ events, loading, cardProfile }) {
                     <EventCard
                         key={event.eventId}
                         event={event}
-                        selectedCoefficient={selectedCoefficient}
+                        selectedVersion={selectedVersion}
                         cardProfile={cardProfile}
                         getOutcomeColor={getOutcomeColor}
                     />
@@ -168,28 +168,28 @@ export default function ResultsSection({ events, loading, cardProfile }) {
     );
 }
 
-function EventCard({ event, selectedCoefficient, cardProfile, getOutcomeColor }) {
-    const hasMatchingCoefficient =
-        selectedCoefficient &&
+function EventCard({ event, selectedVersion, cardProfile, getOutcomeColor }) {
+    const hasMatchingVersion =
+        selectedVersion &&
         event.realCoefficients?.some(
-            (coefficientValue) =>
-                coefficientValue !== null &&
-                parseFloat(coefficientValue).toFixed(2) === parseFloat(selectedCoefficient).toFixed(2)
+            (versionValue) =>
+                versionValue !== null &&
+                parseFloat(versionValue).toFixed(2) === parseFloat(selectedVersion).toFixed(2)
         );
     const getCardColor = () => {
-        if (!hasMatchingCoefficient) return 'bg-slate-50 border-slate-300';
+        if (!hasMatchingVersion) return 'bg-slate-50 border-slate-300';
 
-        const matchingCoefficientIndex = event.realCoefficients?.findIndex((value) => {
+        const matchingVersionIndex = event.realCoefficients?.findIndex((value) => {
             if (value == null) return false;
-            const numericCoefficient = Number(value);
-            const numericSelectedCoefficient = Number(selectedCoefficient);
-            return !isNaN(numericCoefficient) && numericCoefficient.toFixed(2) === numericSelectedCoefficient.toFixed(2);
+            const numericVersion = Number(value);
+            const numericSelectedVersion = Number(selectedVersion);
+            return !isNaN(numericVersion) && numericVersion.toFixed(2) === numericSelectedVersion.toFixed(2);
         });
 
         const isSuccessfulVariant =
-            matchingCoefficientIndex !== -1 &&
-            ((event.winner === 'home' && matchingCoefficientIndex === 0) ||
-                (event.winner === 'away' && matchingCoefficientIndex === 1));
+            matchingVersionIndex !== -1 &&
+            ((event.winner === 'home' && matchingVersionIndex === 0) ||
+                (event.winner === 'away' && matchingVersionIndex === 1));
 
         return isSuccessfulVariant ? 'bg-emerald-100 border-emerald-300' : 'bg-rose-100 border-rose-300';
     };
@@ -214,21 +214,21 @@ function EventCard({ event, selectedCoefficient, cardProfile, getOutcomeColor })
 
             <div className="mb-4">
                 <div className="text-sm text-slate-600 mb-2">{cardProfile.sectionTitle}</div>
-                {/* Основные значения */}
+                {/* Основные версии */}
                 <div className="mb-3">
                     <div className="text-xs font-medium text-slate-500 mb-1">{cardProfile.primaryTitle}</div>
                     <div className="flex gap-2">
-                        {event.realCoefficients?.map((coefficientValue, index) => {
+                        {event.realCoefficients?.map((versionValue, index) => {
                             const isVariantA = index === 0;
                             const isWinner =
                                 (event.winner === 'home' && index === 0) || (event.winner === 'away' && index === 1);
                             const hasResult = event.winner === 'home' || event.winner === 'away';
                             const isSelected =
-                                selectedCoefficient &&
-                                coefficientValue !== null &&
-                                selectedCoefficient !== null &&
-                                (Number(coefficientValue) || 0).toFixed(2) ===
-                                    (Number(selectedCoefficient) || 0).toFixed(2);
+                                selectedVersion &&
+                                versionValue !== null &&
+                                selectedVersion !== null &&
+                                (Number(versionValue) || 0).toFixed(2) ===
+                                    (Number(selectedVersion) || 0).toFixed(2);
 
                             return (
                                 <div
@@ -252,7 +252,7 @@ function EventCard({ event, selectedCoefficient, cardProfile, getOutcomeColor })
                                             isSelected ? 'text-amber-800' : 'text-slate-800'
                                         }`}
                                     >
-                                        {(Number(coefficientValue) || 0).toFixed(2)}
+                                        {(Number(versionValue) || 0).toFixed(2)}
                                     </div>
                                     {isSelected && <div className="text-xs font-medium text-amber-800">Выбрано</div>}
                                     {cardProfile.showOutcomeLabels && hasResult && (
@@ -273,22 +273,22 @@ function EventCard({ event, selectedCoefficient, cardProfile, getOutcomeColor })
                     <div>
                         <div className="text-xs font-medium text-slate-500 mb-1">Дополнительные источники:</div>
                         <div>
-                            {Object.entries(event.flashScoreCoefficients).map(([bookmaker, coefficients], index) => {
+                            {Object.entries(event.flashScoreCoefficients).map(([source, versions], index) => {
                                 return (
-                                    <div key={bookmaker + index}>
-                                        {`${cardProfile.sourceLabels?.[bookmaker] || `Источник ${index + 1}`}:`}
+                                    <div key={source + index}>
+                                        {`${cardProfile.sourceLabels?.[source] || `Источник ${index + 1}`}:`}
                                         <div className="flex gap-1">
-                                            {coefficients.map((coefficientValue, index) => {
+                                            {versions.map((versionValue, index) => {
                                                 const isVariantA = index === 0;
                                                 const isWinner =
                                                     (event.winner === 'home' && index === 0) ||
                                                     (event.winner === 'away' && index === 1);
                                                 const isSelected =
-                                                    selectedCoefficient &&
-                                                    coefficientValue !== null &&
-                                                    selectedCoefficient !== null &&
-                                                    (Number(coefficientValue) || 0).toFixed(2) ===
-                                                        (Number(selectedCoefficient) || 0).toFixed(2);
+                                                    selectedVersion &&
+                                                    versionValue !== null &&
+                                                    selectedVersion !== null &&
+                                                    (Number(versionValue) || 0).toFixed(2) ===
+                                                        (Number(selectedVersion) || 0).toFixed(2);
                                                 return (
                                                     <div
                                                         key={index}
@@ -298,7 +298,7 @@ function EventCard({ event, selectedCoefficient, cardProfile, getOutcomeColor })
                                                                 : 'bg-white/70 border border-slate-300'
                                                         }`}
                                                         title={`${isVariantA ? cardProfile.homeLabel : cardProfile.awayLabel}: ${(
-                                                            Number(coefficientValue) || 0
+                                                            Number(versionValue) || 0
                                                         ).toFixed(2)}`}
                                                     >
                                                         <div className="flex items-center justify-between">
@@ -316,7 +316,7 @@ function EventCard({ event, selectedCoefficient, cardProfile, getOutcomeColor })
                                                                 isSelected ? 'text-amber-800' : 'text-slate-700'
                                                             }`}
                                                         >
-                                                            {(Number(coefficientValue) || 0).toFixed(2)}
+                                                            {(Number(versionValue) || 0).toFixed(2)}
                                                         </div>
                                                         {isSelected && (
                                                             <div className="text-xs font-medium text-amber-800">

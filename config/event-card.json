@@ -6,7 +6,7 @@
     "winnerHome": "Результат: Тест А",
     "winnerAway": "Результат: Тест B",
     "winnerUnknown": "Результат не определен",
-    "sectionTitle": "Сравнение значений:",
+    "sectionTitle": "Сравнение версий:",
     "primaryTitle": "Основной набор:",
     "homeLabel": "Тест А",
     "awayLabel": "Тест B",
@@ -20,7 +20,7 @@
         "winline": "Первый",
         "fonbet": "Второй"
     },
-    "filterLabel": "Фильтр по значению:",
+    "filterLabel": "Фильтр по версии:",
     "teamFilterLabel": "Для теста:",
     "allTeamsLabel": "Любой тест",
     "homeTeamLabel": "Тест A",
