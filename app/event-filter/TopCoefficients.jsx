@@ -1,6 +1,5 @@
 'use client';
 
-import { MIN_SAMPLE_SIZE_FOR_TOP_COEFFICIENTS, MIN_COEFFICIENT_THRESHOLD, TOP_COEFFICIENTS_LIMIT } from './globals';
 import { useMemo } from 'react';
 import { useExperimentStore } from './states';
 
@@ -25,8 +24,16 @@ function CoefficientButton({ stat, isSelected, onClick }) {
     );
 }
 export default function TopCoefficients({ onCoefficientSelect }) {
-    const { statsInitialized, coefficientStats, variantCoefficientStats, selectedCoefficient, selectedVariant } =
-        useExperimentStore();
+    const {
+        statsInitialized,
+        coefficientStats,
+        variantCoefficientStats,
+        selectedCoefficient,
+        selectedVariant,
+        minSampleSize,
+        topCoefficientsLimit,
+        minCoefficientThreshold
+    } = useExperimentStore();
 
     const topCoefficients = useMemo(() => {
         if (!statsInitialized) return [];
@@ -34,25 +41,25 @@ export default function TopCoefficients({ onCoefficientSelect }) {
             return coefficientStats
                 .filter(
                     (stat) =>
-                        stat.sampleSize >= MIN_SAMPLE_SIZE_FOR_TOP_COEFFICIENTS &&
-                        stat.coefficient >= MIN_COEFFICIENT_THRESHOLD
+                        stat.sampleSize >= minSampleSize &&
+                        stat.coefficient >= minCoefficientThreshold
                 )
                 .map((stat) => ({ ...stat, successRate: stat.successCount / stat.sampleSize }))
                 .sort((a, b) => b.successRate - a.successRate || b.coefficient - a.coefficient)
-                .slice(0, TOP_COEFFICIENTS_LIMIT);
+                .slice(0, topCoefficientsLimit);
         }
         const variantStats = Object.values(variantCoefficientStats);
         return variantStats
             .filter(
                 (stat) =>
                     stat.variant === selectedVariant &&
-                    stat.sampleSize >= MIN_SAMPLE_SIZE_FOR_TOP_COEFFICIENTS &&
-                    stat.coefficient >= MIN_COEFFICIENT_THRESHOLD
+                    stat.sampleSize >= minSampleSize &&
+                    stat.coefficient >= minCoefficientThreshold
             )
             .map((stat) => ({ ...stat, successRate: stat.successCount / stat.sampleSize }))
             .sort((a, b) => b.successRate - a.successRate || b.coefficient - a.coefficient)
-            .slice(0, TOP_COEFFICIENTS_LIMIT);
-    }, [statsInitialized, coefficientStats, variantCoefficientStats, selectedVariant]);
+            .slice(0, topCoefficientsLimit);
+    }, [statsInitialized, coefficientStats, variantCoefficientStats, selectedVariant, minSampleSize, topCoefficientsLimit, minCoefficientThreshold]);
 
     return (
         <div className="p-4">

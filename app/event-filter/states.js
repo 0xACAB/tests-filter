@@ -2,6 +2,7 @@
 import { create } from 'zustand/index';
 import { devtools } from 'zustand/middleware';
 import { fetchFilteredEvents } from './actions/stats';
+import { MIN_SAMPLE_SIZE_FOR_TOP_COEFFICIENTS, TOP_COEFFICIENTS_LIMIT, MIN_COEFFICIENT_THRESHOLD } from './globals';
 
 
 const eventFilterReducer = (state, action) => {
@@ -48,6 +49,9 @@ const useExperimentStore = create()(
         coefficientStats: [],
         variantCoefficientStats: {},
         statsInitialized: false,
+        minSampleSize: MIN_SAMPLE_SIZE_FOR_TOP_COEFFICIENTS,
+        topCoefficientsLimit: TOP_COEFFICIENTS_LIMIT,
+        minCoefficientThreshold: MIN_COEFFICIENT_THRESHOLD,
 
         // Инициализация статической статистики (вызывается один раз)
         initializeExperimentStats: (coefficientStats, variantCoefficientStats, totalEvents) => {
@@ -64,6 +68,10 @@ const useExperimentStore = create()(
         },
 
         setSelectedVariant: (selectedVariant) => set({ selectedVariant }),
+
+        setMinSampleSize: (value) => set({ minSampleSize: value }),
+        setTopCoefficientsLimit: (value) => set({ topCoefficientsLimit: value }),
+        setMinCoefficientThreshold: (value) => set({ minCoefficientThreshold: value }),
 
         // Асинхронная загрузка событий эксперимента с сервера
         loadEvents: async () => {
