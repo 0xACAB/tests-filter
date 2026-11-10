@@ -48,17 +48,19 @@ const useExperimentStore = create()(
         loading: false,
         versionStats: [],
         variantVersionStats: {},
+        versionRecords: [],
         statsInitialized: false,
         minSampleSize: MIN_SAMPLE_SIZE_FOR_TOP_VERSIONS,
         topVersionsLimit: TOP_VERSIONS_LIMIT,
         minVersionThreshold: MIN_VERSION_THRESHOLD,
 
         // Инициализация статической статистики (вызывается один раз)
-        initializeExperimentStats: (versionStats, variantVersionStats, totalEvents) => {
+        initializeExperimentStats: (versionStats, variantVersionStats, totalEvents, versionRecords) => {
             set({
                 versionStats,
                 variantVersionStats,
                 totalEvents,
+                versionRecords,
                 statsInitialized: true
             });
         },

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useExperimentStore } from './states';
+import { countRecordsForVersions, getTopVersions } from './versionStats';
 
 export default function FilterPanel({
     events,
@@ -15,6 +16,9 @@ export default function FilterPanel({
 }) {
     const {
         versionStats,
+        variantVersionStats,
+        versionRecords,
+        statsInitialized,
         totalEvents,
         selectedVersion,
         selectedVariant,
@@ -43,18 +47,32 @@ export default function FilterPanel({
         [versionStats]
     );
 
-    // Есть ли активный фильтр (для подсветки)
-    const hasActiveFilter = !!(selectedVersion || selectedVariant);
+    const recordsAfterParameterFiltering = useMemo(() => {
+        if (!statsInitialized) return 0;
+        const topVersions = getTopVersions({
+            versionStats,
+            variantVersionStats,
+            selectedVariant,
+            minSampleSize,
+            topVersionsLimit,
+            minVersionThreshold
+        });
+        return countRecordsForVersions(versionRecords, topVersions, selectedVariant);
+    }, [
+        statsInitialized,
+        versionStats,
+        variantVersionStats,
+        versionRecords,
+        selectedVariant,
+        minSampleSize,
+        topVersionsLimit,
+        minVersionThreshold
+    ]);
 
     return (
         <div className="p-0">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="flex justify-center">
                 <StatBox label="Всего записей" value={totalEvents} />
-                <StatBox
-                    label="Показано"
-                    value={events.length}
-                    highlight={hasActiveFilter && events.length < totalEvents}
-                />
             </div>
 
             <div className="mt-4 p-4 bg-white border border-gray-200">
@@ -64,6 +82,14 @@ export default function FilterPanel({
                     <ParameterInput id="top-versions-limit" label="Лимит версий" value={topVersionsLimit} onChange={setTopVersionsLimit} />
                     <ParameterInput id="min-version-threshold" label="Мин. порог версии" value={minVersionThreshold} onChange={setMinVersionThreshold} decimal />
                 </div>
+            </div>
+
+            <div className="mt-4 flex justify-center">
+                <StatBox
+                    label="Записей после фильтрации"
+                    value={recordsAfterParameterFiltering}
+                    highlight={recordsAfterParameterFiltering < totalEvents}
+                />
             </div>
 
             <div className="mt-4">
@@ -103,6 +129,14 @@ export default function FilterPanel({
                         </select>
                     </div>
                 </div>
+            </div>
+
+            <div className="mt-4 flex justify-center">
+                <StatBox
+                    label="Показано"
+                    value={events.length}
+                    valueClassName="text-green-600"
+                />
             </div>
         </div>
     );
@@ -150,11 +184,11 @@ function parseParameter(value, decimal) {
     return number;
 }
 
-function StatBox({ label, value, highlight = false }) {
+function StatBox({ label, value, highlight = false, valueClassName = '' }) {
     return (
         <div className="text-center">
             <div className="text-sm text-gray-600">{label}</div>
-            <div className={`text-2xl font-bold ${highlight ? 'text-blue-600' : ''}`}>{value}</div>
+            <div className={`text-2xl font-bold ${highlight ? 'text-blue-600' : valueClassName}`}>{value}</div>
         </div>
     );
 }

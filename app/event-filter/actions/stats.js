@@ -79,7 +79,13 @@ export async function fetchExperimentStats() {
         });
         return stats;
     }, {});
-    return [Object.values(versionStats), variantVersionStats, events.length];
+    const versionRecords = events.map((event) =>
+        event.realCoefficients.map((value) => {
+            const version = Number(value);
+            return Number.isFinite(version) ? Number(version.toFixed(2)) : null;
+        })
+    );
+    return [Object.values(versionStats), variantVersionStats, events.length, versionRecords];
 }
 
 export async function fetchFilteredEvents(props) {

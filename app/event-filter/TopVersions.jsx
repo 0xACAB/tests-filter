@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useExperimentStore } from './states';
+import { getTopVersions } from './versionStats';
 
 function VersionButton({ stat, isSelected, onClick }) {
     return (
@@ -37,28 +38,14 @@ export default function TopVersions({ onVersionSelect }) {
 
     const topVersions = useMemo(() => {
         if (!statsInitialized) return [];
-        if (!selectedVariant) {
-            return versionStats
-                .filter(
-                    (stat) =>
-                        stat.sampleSize >= minSampleSize &&
-                        stat.version >= minVersionThreshold
-                )
-                .map((stat) => ({ ...stat, successRate: stat.successCount / stat.sampleSize }))
-                .sort((a, b) => b.successRate - a.successRate || b.version - a.version)
-                .slice(0, topVersionsLimit);
-        }
-        const variantStats = Object.values(variantVersionStats);
-        return variantStats
-            .filter(
-                (stat) =>
-                    stat.variant === selectedVariant &&
-                    stat.sampleSize >= minSampleSize &&
-                    stat.version >= minVersionThreshold
-            )
-            .map((stat) => ({ ...stat, successRate: stat.successCount / stat.sampleSize }))
-            .sort((a, b) => b.successRate - a.successRate || b.version - a.version)
-            .slice(0, topVersionsLimit);
+        return getTopVersions({
+            versionStats,
+            variantVersionStats,
+            selectedVariant,
+            minSampleSize,
+            topVersionsLimit,
+            minVersionThreshold
+        });
     }, [statsInitialized, versionStats, variantVersionStats, selectedVariant, minSampleSize, topVersionsLimit, minVersionThreshold]);
 
     return (
